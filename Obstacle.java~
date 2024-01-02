@@ -1,0 +1,27 @@
+/**
+ * [Obstacle.java]
+ * @author: Jillian and Ellie
+ * @version: June 2022
+ */
+import java.awt.Graphics;
+import java.io.File;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+// possible exceptions
+import java.io.IOException;
+import java.awt.Rectangle;
+
+public class Obstacle extends GameObject{
+//    private int x;
+//    private int y;
+//    private int width;
+//    private int height;
+//    private Rectangle box;
+//------------------------------------------------------------------------------    
+//        private BufferedImage obsPic;
+//------------------------------------------------------------------------------    
+//    Obstacle(String picName, int x, int y, int width, int height){
+  Obstacle(int x, int y, String picName){ //, int width, int height
+    super(x, y, picName);      
+  }   
+}

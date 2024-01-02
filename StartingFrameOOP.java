@@ -1,0 +1,106 @@
+
+/**
+ * [StartingFrameOOP.java]
+ *
+ * @author: Jillian and Ellie
+ * @version: June 2022
+ */
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+import java.awt.event.*;
+import java.awt.Component;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
+import java.awt.Graphics;
+
+class StartingFrameOOP extends JFrame {
+
+    JFrame thisFrame;
+    MyMouseListener mouseListener;
+    boolean mouseClicked = false;
+
+    class ImagePanel extends JPanel {
+
+        private BufferedImage image;
+
+        public ImagePanel(String picName) {
+            try {
+                this.image = ImageIO.read(new File(picName));
+            } catch (IOException ex) {
+            }
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            g.drawImage(image, 0, 0, this);
+        }
+    }
+
+    //Constructor - this runs first
+    StartingFrameOOP() {
+        super("Start Screen");
+
+        this.thisFrame = this;
+        this.setTitle("Le Petit Mario");
+
+        //Create a Panel for stuff
+        JPanel mainPanel = new ImagePanel("images/marioBackground2.png");
+
+        mainPanel.setLayout(null);
+        setBounds(1000, 1000, 600, 360);
+
+        mainPanel.setLayout(null);
+        mouseListener = new MyMouseListener();
+        mouseListener.setFrame(this);
+        mainPanel.addMouseListener(mouseListener);
+
+        this.setLocationRelativeTo(null); //start the frame in the center of the screen
+        this.setResizable(false);
+
+        //add the main panel to the frame
+        this.add(mainPanel);
+        this.setVisible(true);
+        this.requestFocusInWindow();
+    }
+
+    //Mouse Listener
+    public class MyMouseListener implements MouseListener {
+
+        private StartingFrameOOP frame = null;
+
+        public void setFrame(StartingFrameOOP frame) {
+            this.frame = frame;
+        }
+
+        public void mouseClicked(MouseEvent e) {   // moves the box at the mouse location
+            dispose();
+            this.frame.setMouseClicked(true);
+        }
+
+        public void mousePressed(MouseEvent e) {   // MUST be implemented even if not used!
+        }
+
+        public void mouseReleased(MouseEvent e) {  // MUST be implemented even if not used!
+        }
+
+        public void mouseEntered(MouseEvent e) {   // MUST be implemented even if not used!
+        }
+
+        public void mouseExited(MouseEvent e) {    // MUST be implemented even if not used!
+        }
+    }
+
+    public boolean getMouseClicked() {
+        return this.mouseClicked;
+    }
+
+    public void setMouseClicked(boolean m) {
+        this.mouseClicked = m;
+    }
+
+}

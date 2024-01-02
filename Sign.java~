@@ -1,0 +1,36 @@
+/**
+ * [Sign.java]
+ * @author: Jillian and Ellie
+ * @version: June 2022
+ */
+import java.awt.Graphics;
+import java.awt.Color;
+import java.io.File;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+// possible exceptions
+import java.io.IOException;
+import java.awt.Rectangle;
+
+public class Sign extends GameObject{
+//    private int x;
+//    private int y;
+//    private int width;
+//    private int height;
+//    private Rectangle box;
+  private String message;
+//------------------------------------------------------------------------------    
+//    private BufferedImage obsPic;
+//------------------------------------------------------------------------------    
+//    Obstacle(String picName, int x, int y, int width, int height){
+  Sign(int x, int y, String message){ //, int width, int height
+    super(x, y, "images/sign.png");
+    this.message = message;
+  }
+  //---------------------------------------------------------------------------    
+  public void read(Graphics g){
+    g.setColor(Color.white);
+    g.drawString(this.message,this.getX(),this.getY());
+  }
+  
+}

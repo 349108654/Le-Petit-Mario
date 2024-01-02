@@ -1,0 +1,36 @@
+/**
+ * [Slime.java]
+ * @author: Jillian and Ellie
+ * @version: June 2022
+ */
+public class Slime extends Enemy{
+  private double velocity;
+  
+  //Constructor
+  Slime(int x, int y, String picName, int rows, int columns,int hp){
+    super(x, y, picName, rows, columns, hp, null);
+    this.velocity = 1;
+  }
+
+// Methods
+  @Override
+  public boolean attack(Character target,boolean attacked){
+    if ((!attacked) && (!this.getIsDead())){
+      target.hit();
+    }
+    return true;
+  }
+  
+  @Override
+  public void move(int targetX, int targetY, boolean attacked){
+    if (!this.getIsDead() && (!attacked)){
+      this.calculateAngle(targetX, targetY);
+      int vectorX = (int)(Math.round(this.velocity*Math.cos(Math.toRadians(-this.getAngle()))));
+      int vectorY = (int)(Math.round(this.velocity*Math.sin(Math.toRadians(-this.getAngle()))));   
+      this.setX(super.getX() + vectorX);
+      this.setY(super.getY() + vectorY);
+      this.setBox();
+    }
+  }
+  
+}

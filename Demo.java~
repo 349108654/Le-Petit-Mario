@@ -1,0 +1,11 @@
+/**
+ * [GameDemo.java]
+ * @author: Jillian and Ellie
+ * @version: June 2022
+ */
+class GameDemo {
+  public static void main (String[] args) {
+    CharacterDemo demo = new CharacterDemo();
+        demo.run();
+  }
+}

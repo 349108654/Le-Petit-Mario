@@ -1,0 +1,58 @@
+/**
+ * [Mage.java]
+ * @author: Jillian and Ellie
+ * @version: June 2022
+ */
+import java.awt.Graphics;
+
+public class Mage extends Enemy{
+  private double velocity;
+  private Ammo ammo;
+  
+  //Constructor
+  Mage(int x, int y, String picName, int rows, int columns,int hp){
+    super(x, y, picName, rows, columns, hp, new ShooterWeapon(x, y,"images/gun.png"));
+    this.velocity = 1;
+    ammo = new Ammo();
+  }
+
+// Methods
+  @Override
+  public boolean attack(Character target,boolean attacked){
+    if ((!attacked) && (!this.getIsDead())){
+//      System.out.println("attacks!");
+      ammo.setAngle(this.calculateAngle(target.getX(), target.getY()));
+      this.ammo.addBullet(this.getWeapon());
+//          if (this.ammoCollides(target)){
+//            target.hit();
+//          }
+    }
+    return true;
+  }
+  
+  @Override
+  public void draw(Graphics g){
+    super.draw(g);
+    ammo.drawBullets(g);
+  }
+  
+  @Override
+  public void move(int targetX, int targetY, boolean attacked){
+    ammo.moveBullets();
+  }
+  
+  @Override
+  public boolean collides(Character other){
+    if (ammo.collides(other)){
+      other.hit();
+    }
+    return super.collides(other);
+  }
+  
+  @Override
+  public boolean collides(GameObject other){
+    ammo.collides(other);
+    return super.collides(other);
+  }
+  
+}

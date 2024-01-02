@@ -1,0 +1,19 @@
+import java.awt.Rectangle;
+import java.awt.Graphics2D;
+
+public interface Collidable {
+//  Rectangle box = new Rectangle();
+  
+//  //whether the object can be collided with or not
+//  public void setCollidable(boolean collidable);
+//  
+//  //whether the object can be collided with or not, true or false
+//  public boolean isCollidable();
+//  
+//  //check collision of object with given area (change to given object?)
+  //public boolean collidesWithArea(int x, int y, int w, int h);
+  
+  //whether the object collided with any other object
+  public boolean collides(Character other);
+  public boolean collides(GameObject other);
+}

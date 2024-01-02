@@ -1,0 +1,754 @@
+/**
+ * [CharacterDemo.java]
+ * @author: Jillian and Ellie
+ * @version: June 2022
+ */
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import javax.sound.sampled.*;
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class CharacterDemo {
+    
+    public static final int CODE_RUNNING = 0; //game is running
+    public static final int CODE_EXIT_GAME = 1; //exited game
+    public static final int CODE_RESTART_GAME = 2; //restart game
+    int retCode = CODE_RUNNING; //current status
+    
+    static int interval = 1000; //timer interval
+    final int easyCount = 100; //count for easy mode
+    final int hardCount = 30; //count for hard mode
+    int remainingCount = easyCount; //remaining time for playing
+    Timer timer = new Timer();
+
+    JFrame gameWindow;
+    GamePanel gamePanel;
+    MyKeyListener keyListener;
+    MyMouseListener mouseListener;
+    MyMouseMotionListener mouseMotionListener;
+    Usercard usercard;
+    GameOver gameOver;
+    boolean gameStarted = false;
+    boolean leftIsHeld, rightIsHeld, upIsHeld, downIsHeld, playerMove, objectMove;
+
+    //check screen status
+    boolean menu, dead;
+
+    //bgm
+    Music music = new Music("sounds/bgm.wav");
+    Sound gunSound = new Sound("sounds/gun.wav");
+
+    //sign
+    Sign sign = new Sign(300, 315, "Click mouse to attack, use arrow keys to move");
+
+    //Time calculation
+    static long startTime, currentTime, elapsedTime;
+    static int stopPeriod1 = 1, actionPeriod = 2, stopPeriod2 = 5;
+
+    //game objects
+    ShooterWeapon weapon = new ShooterWeapon(Const.WIDTH / 2, Const.HEIGHT / 2, "images/gun.png");
+    Player player = new Player(Const.WIDTH / 2, Const.HEIGHT / 2, "images/mario", 4, 4, 2, 100, 5, weapon);
+    Ammo ammo = new Ammo();
+
+    //enemy
+    Enemy[] room1EnemyMage = {new Mage(200, 1700, "images/mage", 4, 1, 3), new Mage(400, 1700, "images/mage", 4, 1, 3)};
+    Enemy[] room2EnemySlime = {new Slime(1700, 300, "images/slime", 4, 1, 3), new Slime(1800, 300, "images/slime", 4, 1, 3)};
+    Enemy[] room3EnemySlime = {new Slime(1700, 1700, "images/slime", 4, 1, 3)};
+    Enemy[] room3EnemyMage = {new Mage(1800, 1700, "images/mage", 4, 1, 3)};
+
+    //booleans
+    boolean[] attackVariablesRoom1 = new boolean[room1EnemyMage.length];
+    boolean[] attackVariablesRoom2 = new boolean[room2EnemySlime.length];
+    boolean[] attackVariablesRoom3 = new boolean[room3EnemyMage.length + room3EnemySlime.length];
+    static boolean room1, room2, room3, room1Clear, room2Clear, room3Clear;
+
+    //map
+    Background background = new Background("images/map (1).png");
+
+    //obstacle
+    String obsDoorRight = "images/door (right).png";
+    String obsDoorLeft = "images/door (left).png";
+    String obsDoorUp = "images/door (up).png";
+    String obsDoorDown = "images/door (down).png";
+    Obstacle[] obstacles = {new Obstacle(512, 232, obsDoorRight),
+        new Obstacle(1300, 235, obsDoorLeft),
+        new Obstacle(176, 1373, obsDoorUp),
+        new Obstacle(1535, 1370, obsDoorUp),
+        new Obstacle(176, 604, obsDoorDown),
+        new Obstacle(1535, 575, obsDoorDown)
+    };
+
+    String doorFloorVertical = "images/obstacle7.png";
+    String doorFloorHorizontal = "images/obstacle8.png";
+    Obstacle[] doorFloors = {new Obstacle(512, 232, doorFloorVertical),
+        new Obstacle(1370, 235, doorFloorVertical),//upper right door
+        new Obstacle(176, 1435, doorFloorHorizontal),//bottom left door
+        new Obstacle(1535, 1435, doorFloorHorizontal),//bottom right door
+        new Obstacle(176, 604, doorFloorHorizontal),
+        new Obstacle(1535, 575, doorFloorHorizontal)//upper right downer door
+    };
+
+    String obsRoomHorizontal = "images/obstacle1.png";
+    String obsRoomVertical = "images/obstacle2.png";
+    String obsRoomHorizontalHalf = "images/obstacle3.png";
+    String obsRoomVerticalHalf = "images/obstacle4.png";
+    String obsHallHorizontal = "images/obstacle5.png";
+    String obsHallVertical = "images/obstacle6.png";
+    Obstacle[] backgroundObstacles = {
+        new Obstacle(36, 108, obsRoomVertical),//room1 left
+        new Obstacle(46, 61, obsRoomHorizontal), //room1 up
+        new Obstacle(46, 604, obsRoomHorizontalHalf), //room1 down t1
+        new Obstacle(424, 604, obsRoomHorizontalHalf),//room1 down t2
+        new Obstacle(512, 107, obsRoomVerticalHalf),//room1 right t1
+        new Obstacle(512, 482, obsRoomVerticalHalf), //room1 right t2
+
+        new Obstacle(520, 190, obsHallHorizontal), //hall1 up 
+        new Obstacle(520, 482, obsHallHorizontal), //hall1 down
+        new Obstacle(1495, 600, obsHallVertical), //hall2 left 
+        new Obstacle(1783, 600, obsHallVertical), //hall2 right
+        new Obstacle(133, 600, obsHallVertical), //hall2 left 
+        new Obstacle(420, 600, obsHallVertical), //hall2 right
+
+        new Obstacle(1372, 107, obsRoomVerticalHalf),//room2 left t1
+        new Obstacle(1372, 482, obsRoomVerticalHalf), //room2 left t2
+        new Obstacle(1414, 97, obsRoomHorizontal), //room2 up
+        new Obstacle(1409, 572, obsRoomHorizontalHalf), //room2 down
+        new Obstacle(1782, 572, obsRoomHorizontalHalf), //room2 down
+        new Obstacle(1906, 107, obsRoomVertical), //room2 right
+
+        new Obstacle(1361, 1448, obsRoomVertical), //room3 left
+        new Obstacle(1904, 1448, obsRoomVertical), //room3 right
+        new Obstacle(1411, 1922, obsRoomHorizontal), //room3 down
+        new Obstacle(1411, 1452, obsRoomHorizontalHalf), //room3 up t1
+        new Obstacle(1782, 1452, obsRoomHorizontalHalf),//room3 up t2
+
+        new Obstacle(3, 1452, obsRoomVertical), //room4 left
+        new Obstacle(546, 1452, obsRoomVertical), //room4 right
+        new Obstacle(49, 1922, obsRoomHorizontal), //room4 down
+        new Obstacle(49, 1452, obsRoomHorizontalHalf), //room4 up t1
+        new Obstacle(424, 1452, obsRoomHorizontalHalf),//room4 up t2
+    };
+
+    //object boolean
+    boolean obsAppear;
+
+//------------------------------------------------------------------------------
+    //instantiate game objects
+    CharacterDemo() {
+        gameWindow = new JFrame("Game Window");
+        gameWindow.setSize(Const.WIDTH, Const.HEIGHT);
+        gameWindow.setResizable(false);
+        gameWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        gamePanel = new GamePanel();
+        gameWindow.add(gamePanel);
+
+        keyListener = new MyKeyListener();
+        mouseListener = new MyMouseListener();
+        mouseMotionListener = new MyMouseMotionListener();
+        gamePanel.addKeyListener(keyListener);
+        gamePanel.addMouseListener(mouseListener);
+        gamePanel.addMouseMotionListener(mouseMotionListener);
+
+        usercard = new Usercard(this, player);
+        gameOver = new GameOver();
+        music.start();
+        music.loop();
+        gunSound.addLineListener(new MySoundListener());
+
+        gameWindow.setVisible(true);
+    }
+//------------------------------------------------------------------------------  
+    //main game loop
+  /**
+  * run
+  * run the game
+  * @return int, the current running status 0-2
+  */
+    public int run() {
+        startTime = System.currentTimeMillis();
+        while (retCode == CODE_RUNNING) {
+            gameWindow.repaint();
+            try {
+                Thread.sleep(Const.FRAME_PERIOD);
+            } catch (Exception e) {
+            }
+
+            objectMove = true;
+
+            // room 1 clear boolean
+            int deadCount = 0;
+            for (int i = 0; i < room1EnemyMage.length; i++) {
+                if (room1EnemyMage[i].getIsDead()) {
+                    deadCount++;
+                }
+            }
+            if (deadCount == room1EnemyMage.length) {
+                obsAppear = false;
+                room1Clear = true;
+            }
+
+            //room 2 clear boolean
+            deadCount = 0;
+            for (int i = 0; i < room2EnemySlime.length; i++) {
+                if (room2EnemySlime[i].getIsDead()) {
+                    deadCount++;
+                }
+            }
+            if (deadCount == room2EnemySlime.length) {
+                obsAppear = false;
+                room2Clear = true;
+            }
+
+            // room 3 clear boolean
+            deadCount = 0;
+            for (int i = 0; i < room3EnemyMage.length; i++) {
+                if (room3EnemyMage[i].getIsDead()) {
+                    deadCount++;
+                }
+            }
+            for (int i = 0; i < room3EnemySlime.length; i++) {
+                if (room3EnemySlime[i].getIsDead()) {
+                    deadCount++;
+                }
+            }
+            if (deadCount == (room3EnemySlime.length + room3EnemyMage.length)) {
+                obsAppear = false;
+                room3Clear = true;
+            }
+
+            //rooms that the player enter<
+            if ((!room1Clear) && (player.getY() > doorFloors[2].getY() + doorFloors[2].getH()) && (player.getX() < backgroundObstacles[24].getX())) {
+                obsAppear = true;
+                room1 = true;
+            } else if ((!room2Clear) && (player.getX() > doorFloors[1].getX()) && (player.getY() < doorFloors[5].getY())) {
+                obsAppear = true;
+                room2 = true;
+            } else if ((!room3Clear) && (player.getY() > doorFloors[3].getY()) && (player.getX() > backgroundObstacles[18].getX())) {
+                obsAppear = true;
+                room3 = true;
+            }
+
+            for (int i = 0; i < attackVariablesRoom1.length; i++) {
+                attackVariablesRoom1[i] = true;
+            }
+            for (int i = room3EnemySlime.length; i < room3EnemyMage.length; i++) {
+                attackVariablesRoom3[i] = true;
+            }
+            
+            //Time stuff---------------------------------------------------------
+            currentTime = System.currentTimeMillis();     // measure the current time
+            elapsedTime = (currentTime - startTime) / 1000; // calculate the elapsed time in seconds
+            if (elapsedTime == stopPeriod2) {
+                startTime = currentTime;                  // reset startTime to start measuring from the current moment
+                for (int i = 0; i < attackVariablesRoom1.length; i++) {
+                    attackVariablesRoom1[i] = false;
+                }
+                for (int i = 0; i < attackVariablesRoom2.length; i++) {
+                    attackVariablesRoom2[i] = false;
+                }
+                for (int i = 0; i < attackVariablesRoom3.length; i++) {
+                    attackVariablesRoom3[i] = false;
+                }
+            }
+
+            //attack ------------------------------------------------------------------
+            if (room1) {
+                for (int i = 0; i < room1EnemyMage.length; i++) {
+                    attackVariablesRoom1[i] = room1EnemyMage[i].attack(player, attackVariablesRoom1[i]);
+                }
+            }
+            if (room2) {
+                for (int i = 0; i < room2EnemySlime.length; i++) {
+                    if (room2EnemySlime[i].collides(player)) {
+                        attackVariablesRoom2[i] = room2EnemySlime[i].attack(player, attackVariablesRoom2[i]);
+                    }
+                }
+            }
+            if (room3) {
+                for (int i = 0; i < room3EnemySlime.length; i++) {
+                    if (room3EnemySlime[i].collides(player)) {
+                        attackVariablesRoom3[i] = room3EnemySlime[i].attack(player, attackVariablesRoom3[i]);
+                        System.out.println(attackVariablesRoom3[i]);
+                    }
+                }
+                for (int i = 0; i < room3EnemyMage.length; i++) {
+                    attackVariablesRoom3[i + room3EnemySlime.length] = room3EnemyMage[i].attack(player, attackVariablesRoom3[i + room3EnemySlime.length]);
+                }
+            }
+
+            //collision detection ---------------------------------------------------
+            enemyPlayerCollisionDetection(room1EnemyMage);
+            enemyPlayerCollisionDetection(room2EnemySlime);
+            enemyPlayerCollisionDetection(room3EnemySlime);
+            enemyPlayerCollisionDetection(room3EnemyMage);
+
+            //obstacle collisiondetection
+            if (obsAppear) {
+                collisionDetection(obstacles);
+            }
+            collisionDetection(backgroundObstacles);
+
+            for (int i = 0; i < doorFloors.length; i++) {
+                ammo.collides(doorFloors[i]);
+                for (int j = 0; j < room1EnemyMage.length; j++) {
+                    if (room1EnemyMage[j].collides(doorFloors[i])) {
+                        room1EnemyMage[j].reverse(doorFloors[i].getX(), doorFloors[i].getY());
+                    }
+                }
+                for (int j = 0; j < room2EnemySlime.length; j++) {
+                    if (room2EnemySlime[j].collides(doorFloors[i])) {
+                        room2EnemySlime[j].reverse(doorFloors[i].getX(), doorFloors[i].getY());
+                    }
+                }
+                for (int j = 0; j < room3EnemySlime.length; j++) {
+                    if (room3EnemySlime[j].collides(doorFloors[i])) {
+                        room3EnemySlime[j].reverse(doorFloors[i].getX(), doorFloors[i].getY());
+                    }
+                }
+                for (int j = 0; j < room3EnemyMage.length; j++) {
+                    if (room3EnemyMage[j].collides(doorFloors[i])) {
+                        room3EnemyMage[j].reverse(doorFloors[i].getX(), doorFloors[i].getY());
+                    }
+                }
+            }
+
+            //ammo collision detection
+            ammoCollisionDetection(room1EnemyMage);
+            ammoCollisionDetection(room2EnemySlime);
+            ammoCollisionDetection(room3EnemySlime);
+            ammoCollisionDetection(room3EnemyMage);
+
+            //Map moving ---------------------------------------------------------
+            playerMove = true;
+            if (((player.getX() <= 150) && (leftIsHeld)) || ((player.getX() >= 600) && (rightIsHeld)) || ((player.getY() <= 100) && (upIsHeld)) || ((player.getY() >= 400) && (downIsHeld))) {
+                playerMove = false;
+            }
+
+            //Moving player---------------------------------------------------------
+            if (player.getPlayable()) {
+                if (leftIsHeld) {
+                    player.moveLeft(playerMove);
+                    for (int i = 0; i < room1EnemyMage.length; i++) {
+                        room1EnemyMage[i].moveRight(objectMove);
+                    }
+                    for (int i = 0; i < room2EnemySlime.length; i++) {
+                        room2EnemySlime[i].moveRight(objectMove);
+                    }
+                    for (int i = 0; i < room3EnemySlime.length; i++) {
+                        room3EnemySlime[i].moveRight(objectMove);
+                    }
+                    for (int i = 0; i < room3EnemyMage.length; i++) {
+                        room3EnemyMage[i].moveRight(objectMove);
+                    }
+                    background.moveRight();
+                    sign.moveRight();
+                    for (int i = 0; i < obstacles.length; i++) {
+                        obstacles[i].moveRight();
+                    }
+                    for (int i = 0; i < backgroundObstacles.length; i++) {
+                        backgroundObstacles[i].moveRight();
+                    }
+                    for (int i = 0; i < doorFloors.length; i++) {
+                        doorFloors[i].moveRight();
+                    }
+                }
+                if (rightIsHeld) {
+                    player.moveRight(playerMove);
+                    for (int i = 0; i < room1EnemyMage.length; i++) {
+                        room1EnemyMage[i].moveLeft(objectMove);
+                    }
+                    for (int i = 0; i < room2EnemySlime.length; i++) {
+                        room2EnemySlime[i].moveLeft(objectMove);
+                    }
+                    for (int i = 0; i < room3EnemySlime.length; i++) {
+                        room3EnemySlime[i].moveLeft(objectMove);
+                    }
+                    for (int i = 0; i < room3EnemyMage.length; i++) {
+                        room3EnemyMage[i].moveLeft(objectMove);
+                    }
+                    background.moveLeft();
+                    sign.moveLeft();
+                    for (int i = 0; i < obstacles.length; i++) {
+                        obstacles[i].moveLeft();
+                    }
+                    for (int i = 0; i < backgroundObstacles.length; i++) {
+                        backgroundObstacles[i].moveLeft();
+                    }
+                    for (int i = 0; i < doorFloors.length; i++) {
+                        doorFloors[i].moveLeft();
+                    }
+                }
+                if (upIsHeld) {
+                    player.moveUp(playerMove);
+                    for (int i = 0; i < room1EnemyMage.length; i++) {
+                        room1EnemyMage[i].moveDown(objectMove);
+                    }
+                    for (int i = 0; i < room2EnemySlime.length; i++) {
+                        room2EnemySlime[i].moveDown(objectMove);
+                    }
+                    for (int i = 0; i < room3EnemySlime.length; i++) {
+                        room3EnemySlime[i].moveDown(objectMove);
+                    }
+                    for (int i = 0; i < room3EnemyMage.length; i++) {
+                        room3EnemyMage[i].moveDown(objectMove);
+                    }
+                    background.moveDown();
+                    sign.moveDown();
+                    for (int i = 0; i < obstacles.length; i++) {
+                        obstacles[i].moveDown();
+                    }
+                    for (int i = 0; i < backgroundObstacles.length; i++) {
+                        backgroundObstacles[i].moveDown();
+                    }
+                    for (int i = 0; i < doorFloors.length; i++) {
+                        doorFloors[i].moveDown();
+                    }
+                }
+                if (downIsHeld) {
+                    player.moveDown(playerMove);
+                    for (int i = 0; i < room1EnemyMage.length; i++) {
+                        room1EnemyMage[i].moveUp(objectMove);
+                    }
+                    for (int i = 0; i < room2EnemySlime.length; i++) {
+                        room2EnemySlime[i].moveUp(objectMove);
+                    }
+                    for (int i = 0; i < room3EnemySlime.length; i++) {
+                        room3EnemySlime[i].moveUp(objectMove);
+                    }
+                    for (int i = 0; i < room3EnemyMage.length; i++) {
+                        room3EnemyMage[i].moveUp(objectMove);
+                    }
+                    background.moveUp();
+                    sign.moveUp();
+                    for (int i = 0; i < obstacles.length; i++) {
+                        obstacles[i].moveUp();
+                    }
+                    for (int i = 0; i < backgroundObstacles.length; i++) {
+                        backgroundObstacles[i].moveUp();
+                    }
+                    for (int i = 0; i < doorFloors.length; i++) {
+                        doorFloors[i].moveUp();
+                    }
+                }
+            }
+
+            // other methods ---------------------------------------------------------
+            ammo.moveBullets();
+            if (room1) {
+                for (int i = 0; i < room1EnemyMage.length; i++) {
+                    room1EnemyMage[i].move(player.getX(), player.getY(), attackVariablesRoom1[i]);
+                }
+            }
+            if (room2) {
+                for (int i = 0; i < room2EnemySlime.length; i++) {
+//                System.out.println(attackVariablesRoom2[i]);
+                    room2EnemySlime[i].move(player.getX(), player.getY(), attackVariablesRoom2[i]);
+                }
+            }
+            if (room3) {
+                for (int i = 0; i < attackVariablesRoom3.length; i++) {
+                    if (i < room3EnemySlime.length) {
+                        room3EnemySlime[i].move(player.getX(), player.getY(), attackVariablesRoom3[i]);
+                    } else {
+                        room3EnemyMage[i - room3EnemySlime.length].move(player.getX(), player.getY(), attackVariablesRoom3[i]);
+                    }
+                }
+            }
+
+            if (player.getIsDead()) {
+                gameOver.setWin(false);
+                dead = true;
+            } else if (room1Clear && room2Clear && room3Clear) {
+                gameOver.setWin(true);
+                dead = true;
+            }
+        }
+        return retCode;
+    }
+
+    //collision Detection method
+    /**
+     * collisionDetection
+     * checking for collisions with obstacles
+     * @param obstacles, an array of obstacles
+     */
+    public void collisionDetection(Obstacle[] obstacles) {
+        for (int i = 0; i < obstacles.length; i++) {
+            if (obstacles[i].collides(player)) {
+                if (player.getX() <= obstacles[i].getX()) {
+                    rightIsHeld = false;
+                } else if (player.getX() >= obstacles[i].getX()) {
+                    leftIsHeld = false;
+                }
+
+                if (player.getY() >= obstacles[i].getY()) {
+                    upIsHeld = false;
+                } else if (player.getY() <= obstacles[i].getY()) {
+                    downIsHeld = false;
+                }
+            }
+            ammo.collides(obstacles[i]);
+            for (int j = 0; j < room1EnemyMage.length; j++) {
+                if (room1EnemyMage[j].collides(obstacles[i])) {
+                    room1EnemyMage[j].reverse(obstacles[i].getX(), obstacles[i].getY());
+                }
+            }
+            for (int j = 0; j < room2EnemySlime.length; j++) {
+                if (room2EnemySlime[j].collides(obstacles[i])) {
+                    room2EnemySlime[j].reverse(obstacles[i].getX(), obstacles[i].getY());
+                }
+            }
+            for (int j = 0; j < room3EnemySlime.length; j++) {
+                if (room3EnemySlime[j].collides(obstacles[i])) {
+                    room3EnemySlime[j].reverse(obstacles[i].getX(), obstacles[i].getY());
+                }
+            }
+            for (int j = 0; j < room3EnemyMage.length; j++) {
+                if (room3EnemyMage[j].collides(obstacles[i])) {
+                    room3EnemyMage[j].reverse(obstacles[i].getX(), obstacles[i].getY());
+                }
+            }
+        }
+    }
+
+    //ammoCollisionDetection ------------------------------------------------------
+    /**
+     * ammoCollisionDetection
+     * checking for collisions with bullets, if they hit enemies
+     * @param enemies, an array of enemies
+     */
+    public void ammoCollisionDetection(Enemy[] enemies) {
+        for (int i = 0; i < enemies.length; i++) {
+            if (ammo.collides(enemies[i])) {
+                enemies[i].hit();
+            }
+        }
+    }
+
+    //enemyPlayerCollisionDetection------------------------------------------------
+    /**
+     * enemyCollisionDetection
+     * checking player collision with enemies
+     * @param enemies, an array of enemies
+     */
+    public void enemyPlayerCollisionDetection(Enemy[] enemies) {
+        for (int i = 0; i < enemies.length; i++) {
+            if (enemies[i].collides(player)) {
+                enemies[i].reverse(player.getX(), player.getY());
+            }
+        }
+    }
+
+//------------------------------------------------------------------------------  
+    //act upon key events
+    public class MyKeyListener implements KeyListener {
+
+        public void keyPressed(KeyEvent e) {
+            int key = e.getKeyCode();
+            if (key == KeyEvent.VK_LEFT) {
+                leftIsHeld = true;
+            } else if (key == KeyEvent.VK_RIGHT) { 
+                rightIsHeld = true;
+            } else if (key == KeyEvent.VK_UP) { 
+                upIsHeld = true;
+            } else if (key == KeyEvent.VK_DOWN) { 
+                downIsHeld = true;
+            }
+        }
+
+        public void keyReleased(KeyEvent e) {
+            boolean oldGameStarted = gameStarted; //compare with old status
+            int key = e.getKeyCode();
+            if (key == KeyEvent.VK_LEFT) {
+                leftIsHeld = false;
+                gameStarted = true;
+            } else if (key == KeyEvent.VK_RIGHT) {
+                rightIsHeld = false;
+                gameStarted = true;
+            } else if (key == KeyEvent.VK_UP) {
+                upIsHeld = false;
+                gameStarted = true;
+            } else if (key == KeyEvent.VK_DOWN) {
+                downIsHeld = false;
+                gameStarted = true;
+            }
+            if (!oldGameStarted && gameStarted) {
+                timer.scheduleAtFixedRate(new TimerTask() {
+                    public void run() {
+                        --remainingCount; //time decreases
+                        if (remainingCount <= 0) {
+                            timer.cancel();
+                            dead = true;
+                        }
+
+                        System.out.println("Timer: " + remainingCount);
+                    }
+                }, interval, interval);
+            }
+        }
+
+        public void keyTyped(KeyEvent e) {
+            char keyChar = e.getKeyChar();
+        }
+    }
+//------------------------------------------------------------------------------
+    //Mouse Listener
+    public class MyMouseListener implements MouseListener {
+
+        public void mouseClicked(MouseEvent e) {   // moves the box at the mouse location
+            int mouseX = e.getX();
+            int mouseY = e.getY();
+            if (!player.getIsDead()) {
+                double angle = weapon.calculateAngle(mouseX, mouseY);
+                weapon.rotatePicture();
+                ammo.setAngle(angle);
+                ammo.addBullet(weapon);
+                if (gunSound.isRunning()) {
+                    gunSound.stop();               // stop the sound effect if still running
+                    gunSound.flush();              // clear the buffer with audio data
+                    gunSound.setFramePosition(0);  // prepare to start from the beginning
+                }
+                gunSound.start();
+            }
+            if (dead) {
+                if (gameOver.hoverMenu(mouseX, mouseY)) {
+                    retCode = CODE_EXIT_GAME;
+                    gameWindow.dispatchEvent(new WindowEvent(gameWindow, WindowEvent.WINDOW_CLOSING));
+                } else if (gameOver.hoverRestart(mouseX, mouseY)) {
+                    //restart
+                    retCode = CODE_RESTART_GAME;
+                    clear();
+                    gameWindow.dispose();
+                }
+            }
+        }
+
+        public void mousePressed(MouseEvent e) { 
+        }
+
+        public void mouseReleased(MouseEvent e) {  
+        }
+
+        public void mouseEntered(MouseEvent e) { 
+        }
+
+        public void mouseExited(MouseEvent e) {   
+        }
+    }
+
+    public class MyMouseMotionListener implements MouseMotionListener {
+        public void mouseMoved(MouseEvent e) {
+            if (dead) {
+                int mouseX = e.getX();
+                int mouseY = e.getY();
+                gameOver.hoverMenu(mouseX, mouseY);
+                gameOver.hoverRestart(mouseX, mouseY);
+            }
+        }
+
+        public void mouseDragged(MouseEvent e) {
+        }
+    }
+
+    public class MySoundListener implements LineListener {
+
+        public void update(LineEvent event) {
+            if (event.getType() == LineEvent.Type.STOP) {
+                gunSound.flush();                  // clear the buffer with audio data
+                gunSound.setFramePosition(0);      // prepare to start from the beginning
+            }
+        }
+    }
+//------------------------------------------------------------------------------
+
+    public class GamePanel extends JPanel {
+
+        GamePanel() {
+            setFocusable(true);
+            requestFocusInWindow();
+        }
+
+        @Override
+        public void paintComponent(Graphics g) {
+            super.paintComponent(g); //required
+            background.draw(g);
+            sign.draw(g);
+            //draw all obstacles
+            if (obsAppear) {
+                for (int i = 0; i < obstacles.length; i++) {
+                    obstacles[i].draw(g);
+                }
+            }
+            for (int i = 0; i < backgroundObstacles.length; i++) {
+                backgroundObstacles[i].draw(g);
+            }
+            for (int i = 0; i < doorFloors.length; i++) {
+                doorFloors[i].draw(g);
+            }
+            if (sign.collides(player)) {
+                sign.read(g);
+            }
+            ammo.drawBullets(g);
+            for (int i = 0; i < room1EnemyMage.length; i++) {
+                room1EnemyMage[i].draw(g);
+            }
+            for (int i = 0; i < room2EnemySlime.length; i++) {
+                room2EnemySlime[i].draw(g);
+            }
+            for (int i = 0; i < room3EnemySlime.length; i++) {
+                room3EnemySlime[i].draw(g);
+            }
+            for (int i = 0; i < room3EnemyMage.length; i++) {
+                room3EnemyMage[i].draw(g);
+            }
+            player.draw(g);
+            weapon.draw(g);
+            usercard.showInfo(g);
+
+            if (dead) {
+                gameOver.draw(g);
+            }
+        }
+    }
+
+    public int getRemainingTime() {
+        return this.remainingCount;
+    }
+    
+    public void clear() {
+      music.stop(); 
+      timer.cancel();
+      
+    }
+
+    /**
+     * getStartingFrame
+     * run the starting frame and the characterDemo as well
+     */
+    static public void getStartingFrame() {
+        int ret = CharacterDemo.CODE_RESTART_GAME;
+        while (ret == CharacterDemo.CODE_RESTART_GAME) {
+            StartingFrameOOP sFrameOOP = new StartingFrameOOP();
+            while (!sFrameOOP.getMouseClicked()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    System.out.println(e);
+                }
+            }    //no action taken, sleep
+            sFrameOOP.dispose(); //dispose of starting frame
+
+            CharacterDemo demo = new CharacterDemo();
+            ret = demo.run();
+            demo = null;
+        }
+    }
+//------------------------------------------------------------------------------
+
+    public static void main(String[] args) {
+        getStartingFrame();
+    }
+}
