@@ -1,9 +1,11 @@
 # Le-Petit-Mario 
 
-This project was created in Java
+Java project inspired by the game Soul Knight
 
-## To run this code
-1. Be sure to have downloaded Java and have an IDE that allows Java to be run
+## To run this project
+1. Set up Java environment on your computer
+   using VSCode: https://code.visualstudio.com/docs/languages/java
+   
 2. Compile the code and run the file "CharacterDemo.java"
 
-Hope you enjoy this project
+Hope you enjoy Le Petit Mario
