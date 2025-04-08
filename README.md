@@ -7,4 +7,4 @@ Java project inspired by the game Soul Knight
    
 2. Compile the code and run the file "CharacterDemo.java"
 
-# Hope you enjoy Le Petit Mario
+## Hope you enjoy Le Petit Mario
